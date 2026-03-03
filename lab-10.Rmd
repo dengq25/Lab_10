@@ -15,29 +15,200 @@ library(tidymodels)
 library(openintro)
 ```
 
-## Exercise 1
-
-*Provide your answer here.*  
-Add code chunks as needed. Don't forget to label your code chunks.
+## Part 1 Exercise 1
+The distribution of score is left-skewed. 
+Students are generous, the median is 4.3 and the mean is 4.175, meaning more than half of professors were rated above 4.3. The middle 50% of scores fall between 3.8 and 4.6 (IQR), and virtually no one scores near the bottom — the minimum is 2.3, but that's clearly rare. The mean being slightly below the median is consistent with left skew.
 
 
 ```{r exercise1_code}
-# Add your R code here
+ggplot(evals, aes(x = score)) +
+  geom_histogram(binwidth = 0.1, color = "black") +
+  labs(title = "Distribution of Professor Evaluation Scores",
+       x = "Score", y = "Count")
+
+summary(evals$score)
 ```
 
 ## Exercise 2
 
-*Provide your answer here.*  
-Add code chunks as needed.
+There is a weak positive trend. Professors with higher beauty ratings tend to score slightly higher. But the relationship has a lot of noise. Points are spread widely across the full range of scores at nearly every beauty rating. Notably, points appear stacked in vertical lines, this may mean that beauty ratings take on only a limited set of discrete values.
 
 ```{r exercise2_code}
-# Add your R code here
+ggplot(evals, aes(x = bty_avg, y = score)) +
+  geom_point() +
+  labs(title = "Score vs. Average Beauty Rating",
+       x = "Average Beauty Rating", y = "Evaluation Score")
 ```
 
-## Additional Exercises
+## Exercise 3
 
-*Repeat the format above for additional exercises.*
+Jittering adds a small amount of random noise to each point so that overlapping observations are spread apart and visible. In the original plot, many points were stacked directly on top of each other because both score and bty_avg probably take discrete values. Someone looking only at the non-jittered plot might think the dataset is smaller than it is, since many points are hidden behind each other.
 
-## Hint
+```{r}
+ggplot(evals, aes(x = bty_avg, y = score)) +
+  geom_jitter() +
+  labs(title = "Score vs. Average Beauty Rating",
+       x = "Average Beauty Rating", y = "Evaluation Score")
+```
 
-For Exercise 12, the `relevel()` function can be helpful!
+## Part 2 Exercise 1
+
+```{r}
+m_bty <- lm(score ~ bty_avg, data = evals)
+tidy(m_bty)
+
+summary(m_bty)
+```
+score = 3.880 + 0.067 * bty_avg
+
+## Exercise 2
+
+```{r}
+ggplot(evals, aes(x = bty_avg, y = score)) +
+  geom_jitter(alpha = 0.5, color = "steelblue") +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Score vs. Average Beauty Rating (Jittered)",
+       x = "Average Beauty Rating", y = "Evaluation Score")
+```
+
+## Exercise 3
+
+Slope: For each one-point increase in average beauty rating, the model predicts an increase of about 0.067 points in evaluation score. 
+
+Intercept: The intercept of 3.880 represents the predicted evaluation score for a professor with a beauty rating of 0. This is not meaningful in context.
+
+R²: The R² value is approximately 0.035, meaning beauty rating explains only about 3.5% of the variation in evaluation scores. 
+
+The shading around the regression line represents the uncertainty in where the true line lies. Reading too much into the slope at this stage risks overstating a relationship that is real but very weak.
+
+## Part 3 Exercise 1
+
+The reference level is female.
+
+The gendermale coefficient of 0.142 tells us that male professors score about 0.142 points higher on average than female professors.
+
+Female: 4.09
+Male: 4.09 + 0.142 = 4.232
+```{r}
+m_gen <- lm(score ~ gender, data = evals)
+tidy(m_gen)
+```
+
+## Exercise 2
+
+```{r}
+evals <- evals %>%
+  mutate(
+    rank_relevel = relevel(rank, ref = "tenure track"),
+    tenure_eligible = ifelse(rank == "teaching", "no", "yes")
+  )
+
+# Fit the three models
+m_rank <- lm(score ~ rank, data = evals)
+m_rank_relevel <- lm(score ~ rank_relevel, data = evals)
+m_tenure_eligible <- lm(score ~ tenure_eligible, data = evals)
+
+summary(m_rank)
+summary(m_rank_relevel)
+summary(m_tenure_eligible)
+```
+
+## Exercise 3
+
+Model 1 (baseline = teaching): The intercept of 4.284 is the predicted score for teaching faculty. Tenure track professors score 0.130 points lower and tenured professors score 0.145 points lower compared to teaching faculty.
+
+Model 2 (baseline = tenure track): The intercept of 4.155 is the predicted score for tenure track faculty. Teaching faculty score 0.130 points higher than tenure track. Tenured faculty score only 0.016 points lower than tenure track.
+
+Model 3 (baseline = not tenure eligible = teaching): The intercept of 4.284 is the predicted score for teaching faculty. Tenure-eligible faculty (tenure track + tenured combined) score 0.141 points lower.
+
+## Exercise 4
+
+m_rank: R² = 0.012
+m_rank_relevel: R² = 0.012
+m_tenure_eligible: R² = 0.012
+
+Rank explains very little of the variation in evaluation scores. All three models have an R² of about 0.012, meaning rank accounts for only around 1% of the variance in scores. 
+
+## Part 4 
+```{r}
+m_bty <- lm(score ~ bty_avg, data = evals)
+m_bty_gen <- lm(score ~ bty_avg + gender, data = evals)
+
+summary(m_bty)
+summary(m_bty_gen)
+```
+## Exercise 1
+ 
+The beauty slope increases slightly from 0.067 to 0.074 when gender is added to the model.
+ 
+## Exercise 2
+ 
+Yes. Holding beauty rating constant, male professors are predicted to score 0.172 points higher than female professors. 
+ 
+## Exercise 3
+ 
+Adding gender nearly increase the explained variance, going from 3.5% to 5.9%.
+
+## Exercise 4 
+
+```{r}
+m_bty_rank <- lm(score ~ bty_avg + rank, data = evals)
+summary(m_bty_rank)
+```
+
+Slope: Holding rank constant, each one-point increase in average beauty rating predicts a 0.068 point increase in evaluation score.
+
+One Rank coefficient: The coefficient for tenure track is -0.161, meaning that tenure track professors are predicted to score 0.161 points lower than teaching faculty with the same beauty rating. 
+
+## Part 5 Exercise 1
+```{r}
+?evals
+```
+
+cls_profs: the number of professors teaching sections of the course tells you nothing about the professor's teaching quality or any other characteristic that might influence student evaluations.
+
+## Exercise 2
+
+```{r}
+m_cls_profs <- lm(score ~ cls_profs, data = evals)
+summary(m_cls_profs)
+```
+
+
+## Exercise 3
+
+I should not include cls_did_eval. The percent of students who completed the evaluation is mathematically determined by the number who completed it and the total number of students. Including all three would introduce multicollinearity.
+
+## Exercise 4
+
+```{r}
+m_full <- lm(score ~ rank + ethnicity + gender + language + age + 
+               cls_perc_eval + cls_students + cls_level + cls_profs + 
+               cls_credits + bty_avg, data = evals)
+
+summary(m_full)
+```
+
+
+## Exercise 5
+
+```{r}
+m_backward <- stats::step(m_full, direction = "backward")
+summary(m_backward)
+```
+
+score = 3.447 + 0.205(ethnicity: not minority) + 0.185(gender: male) - 0.161(language: non-english) - 0.005(age) + 0.005(cls_perc_eval) + 0.515(cls_credits: one credit) + 0.065(bty_avg)
+
+## Exercise 6
+
+Numerical predictor (age): Holding all other variables constant, each one-year increase in a professor's age is associated with a predicted decrease of 0.005 points in evaluation score. 
+
+Categorical predictor (gender): Holding all other variables constant, male professors are predicted to score 0.185 points higher than female professors.
+
+## Exercise 7
+
+Based on the final model, a high-scoring professor at UT Austin would tend to be male, non-minority, younger, more attractive, and educated at an English-speaking institution, teaching a one-credit course with high student participation in evaluations. Notably, many of these characteristics -- such as gender, ethnicity, and attractiveness -- have nothing to do with actual teaching quality, highlighting the broader concern that course evaluations may reflect bias as much as instructional effectiveness.
+
+## Exercise 8
+
+No, these conclusions should not be generalized to professors at other universities. The data comes entirely from one institution, which has a specific student population, culture, and course structure that may not be representative of universities broadly.
