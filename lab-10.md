@@ -1,7 +1,7 @@
 Lab 10 - Grading the professor
 ================
-Insert your name here
-Insert date here
+Cynthia Deng
+03/03/2026
 
 Here is a link to the [lab
 instructions](https://datascience4psych.github.io/DataScience4Psych/lab10.html).
@@ -14,7 +14,7 @@ library(tidymodels)
 library(openintro)
 ```
 
-## Exercise 1
+## Part 1 Exercise 1
 
 The distribution of score is left-skewed. Students are generous, the
 median is 4.3 and the mean is 4.175, meaning more than half of
